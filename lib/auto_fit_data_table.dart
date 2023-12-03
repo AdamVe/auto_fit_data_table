@@ -2,7 +2,6 @@ library auto_fit_data_table;
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:window_manager/window_manager.dart';
 
 class AutoFitDataTable extends StatefulWidget {
   final DataTableSource source;
@@ -12,7 +11,8 @@ class AutoFitDataTable extends StatefulWidget {
   final int? sortColumnIndex;
   final bool sortAscending;
   final void Function(bool?)? onSelectAll;
-  final double dataRowHeight;
+  final double dataRowMinHeight;
+  final double dataRowMaxHeight;
   final double headingRowHeight;
   final double horizontalMargin;
   final double columnSpacing;
@@ -26,14 +26,15 @@ class AutoFitDataTable extends StatefulWidget {
   final double? checkboxHorizontalMargin;
 
   const AutoFitDataTable({
-    Key? key,
+    super.key,
     this.header,
     this.actions,
     required this.columns,
     this.sortColumnIndex,
     this.sortAscending = true,
     this.onSelectAll,
-    this.dataRowHeight = kMinInteractiveDimension,
+    this.dataRowMinHeight = kMinInteractiveDimension,
+    this.dataRowMaxHeight = kMinInteractiveDimension,
     this.headingRowHeight = 56.0,
     this.horizontalMargin = 24.0,
     this.columnSpacing = 56.0,
@@ -46,68 +47,58 @@ class AutoFitDataTable extends StatefulWidget {
     this.arrowHeadColor,
     required this.source,
     this.checkboxHorizontalMargin,
-  }) : super(key: key);
+  });
 
   @override
   State<AutoFitDataTable> createState() => _AutoFitDataTableState();
 }
 
-class _AutoFitDataTableState extends State<AutoFitDataTable> with WindowListener {
-  int _rowsPerPage = 15;
+class _AutoFitDataTableState extends State<AutoFitDataTable> {
   Size? previousSize;
 
   @override
-  void onWindowResize() {
-    var size = context.size;
-    if (size != null) {
-      var newRowsPerPage =
-          size.height ~/ widget.dataRowHeight - (3 * (widget.headingRowHeight ~/ widget.dataRowHeight) + 0);
-      if (newRowsPerPage != _rowsPerPage && newRowsPerPage > 3) {
-        setState(() {
-          _rowsPerPage = newRowsPerPage;
-        });
-      }
-    }
-  }
-
-  @override
-  void dispose() {
-    windowManager.removeListener(this);
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    Future.delayed(Duration.zero, onWindowResize);
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints boxConstraints) {
+        final availableHeight = boxConstraints.maxHeight -
+            (widget.header != null ? 64.0 : 0) -
+            widget.headingRowHeight -
+            (widget.showFirstLastButtons ? 64.0 : 0);
 
-    if (!windowManager.listeners.contains(this)) {
-      windowManager.addListener(this);
-    }
-
-    return Expanded(
-        child: SingleChildScrollView(
-            child: PaginatedDataTable(
-              header: widget.header,
-              actions: widget.actions,
-              columns: widget.columns,
-              sortColumnIndex: widget.sortColumnIndex,
-              sortAscending: widget.sortAscending,
-              onSelectAll: widget.onSelectAll,
-              dataRowHeight: widget.dataRowHeight,
-              headingRowHeight: widget.headingRowHeight,
-              horizontalMargin: widget.horizontalMargin,
-              columnSpacing: widget.columnSpacing,
-              showCheckboxColumn: widget.showCheckboxColumn,
-              showFirstLastButtons: widget.showFirstLastButtons,
-              initialFirstRowIndex: widget.initialFirstRowIndex,
-              onPageChanged: widget.onPageChanged,
-              rowsPerPage: _rowsPerPage,
-              onRowsPerPageChanged: widget.onRowsPerPageChanged,
-              dragStartBehavior: widget.dragStartBehavior,
-              arrowHeadColor: widget.arrowHeadColor,
-              source: widget.source,
-              checkboxHorizontalMargin: widget.checkboxHorizontalMargin,
-            )));
+        var rowsPerPage = availableHeight ~/ widget.dataRowMaxHeight;
+        return SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.max,
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              PaginatedDataTable(
+                header: widget.header,
+                actions: widget.actions,
+                columns: widget.columns,
+                sortColumnIndex: widget.sortColumnIndex,
+                sortAscending: widget.sortAscending,
+                onSelectAll: widget.onSelectAll,
+                dataRowMinHeight: widget.dataRowMinHeight,
+                dataRowMaxHeight: widget.dataRowMaxHeight,
+                headingRowHeight: widget.headingRowHeight,
+                horizontalMargin: widget.horizontalMargin,
+                columnSpacing: widget.columnSpacing,
+                showCheckboxColumn: widget.showCheckboxColumn,
+                showFirstLastButtons: widget.showFirstLastButtons,
+                initialFirstRowIndex: widget.initialFirstRowIndex,
+                onPageChanged: widget.onPageChanged,
+                rowsPerPage: rowsPerPage > 3 ? rowsPerPage : 3,
+                onRowsPerPageChanged: widget.onRowsPerPageChanged,
+                dragStartBehavior: widget.dragStartBehavior,
+                arrowHeadColor: widget.arrowHeadColor,
+                source: widget.source,
+                checkboxHorizontalMargin: widget.checkboxHorizontalMargin,
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 }
-

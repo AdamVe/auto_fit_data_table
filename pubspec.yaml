@@ -1,6 +1,6 @@
 name: auto_fit_data_table
 description: DataTable which automatically resizes based on the window size.
-version: 0.0.2
+version: 1.0.0
 homepage: https://github.com/AdamVe/auto_fit_data_table
 
 environment:
@@ -10,7 +10,6 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  window_manager: ^0.3.7
 
 dev_dependencies:
   flutter_test:
